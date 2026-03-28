@@ -1,0 +1,54 @@
+hydra:
+  run:
+    dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+defaults:
+  - _self_
+  - pretrain_model: tactic
+  - override hydra/hydra_logging: disabled  
+  - override hydra/job_logging: disabled  
+
+output_dir: ${hydra:run.dir}
+seed: 0
+devices: [0]
+workers_per_gpu: 4
+
+optim:
+  max_steps: 120_000               # Every step completes batch_size * gradient_accumulation_steps samples
+  warmup_steps: 3_000
+  log_every_n_steps: 10
+  eval_every_n_steps: 1000
+  batch_size: 4                     # Total batch size over all devices.
+  gradient_accumulation_steps: 16    # Accumulation steps are not counted towards max_steps
+  lr: 1.e-4
+  weight_decay: 0.00
+  beta1: 0.9
+  beta2: 0.95
+  cosine_scheduler: True  
+  max_grad_norm: 1.0
+  use_pretrained_weights: True
+  path_to_weights: checkpoints/noisy_tactic.pt            # Path to a checkpoint to load weights from
+  loss_anom_weight: 0.5
+
+data:
+  use_gmm_prior: True
+  gmm_prob_thr: 0.3
+  query_balance_factor: 0.5
+  anoms_in_support: True
+  generator: tabpfn
+  min_samples_support: 256
+  max_samples_support: 1024            
+  n_samples_query: 9192
+  min_features: 2
+  max_features: 50
+  max_classes: 10
+  generator_hyperparams:
+    min_depth: 1
+    max_depth: 25
+    base_size: 1024
+    categorical_x: True
+
+
+preprocessing:
+  use_quantile_transformer: False         # TabPFN: True
+  use_feature_count_scaling: True        # TabPFN: True
